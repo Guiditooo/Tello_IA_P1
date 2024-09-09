@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,7 +14,7 @@ public class Boid3D : MonoBehaviour
 
     void Start()
     {
-        velocity = Random.insideUnitCircle * maxSpeed; // Velocidad inicial aleatoria
+        velocity = Random.insideUnitCircle * maxSpeed;
         acceleration = Vector3.zero;
     }
 
@@ -25,33 +24,28 @@ public class Boid3D : MonoBehaviour
         Vector3 ali = Alignment();
         Vector3 coh = Cohesion();
 
-        // Si hay un objetivo, agregar la fuerza de Seek hacia el objetivo
         if (target != null)
         {
             Vector3 seekTarget = Seek(target.position);
             acceleration += seekTarget;
         }
 
-        // Aplicar las fuerzas de flocking
         acceleration += sep;
         acceleration += ali;
         acceleration += coh;
 
-        // Actualizar velocidad y posición
         velocity += acceleration * Time.deltaTime;
         velocity = Vector3.ClampMagnitude(velocity, maxSpeed);
         transform.position += velocity * Time.deltaTime;
 
-        // Resetear la aceleración
         acceleration = Vector3.zero;
 
-        // Alinear la dirección del Boid con su movimiento
         if (velocity != Vector3.zero)
             transform.forward = velocity.normalized;
     }
 
-    // Separación: Mantener distancia con otros boids
-    Vector3 Separation()
+    // Separation: mantiene distancia de otros boids
+    Vector3 Separation() 
     {
         Vector3 force = Vector3.zero;
         int count = 0;
@@ -77,7 +71,7 @@ public class Boid3D : MonoBehaviour
         return force;
     }
 
-    // Alineación: Moverse en la misma dirección que los vecinos
+    // Alignment: Hace que su rotación sea igual a la rotación promedio de los vecinos
     Vector3 Alignment()
     {
         Vector3 avgVelocity = Vector3.zero;
@@ -99,7 +93,7 @@ public class Boid3D : MonoBehaviour
         return Vector3.zero;
     }
 
-    // Cohesión: Moverse hacia el centro del grupo
+    // Cohesion: Se intenta mover al centro de la formación
     Vector3 Cohesion()
     {
         Vector3 centerOfMass = Vector3.zero;
@@ -120,7 +114,6 @@ public class Boid3D : MonoBehaviour
         return Vector3.zero;
     }
 
-    // Función de búsqueda de vecinos cercanos
     List<Boid3D> FindNeighbors()
     {
         List<Boid3D> neighbors = new List<Boid3D>();
@@ -134,7 +127,6 @@ public class Boid3D : MonoBehaviour
         return neighbors;
     }
 
-    // Función Seek: Moverse hacia un objetivo
     Vector3 Seek(Vector3 target)
     {
         Vector3 desired = target - transform.position;
