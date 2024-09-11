@@ -1,11 +1,12 @@
-using FlyEngine;
-
-public abstract class Agent
+namespace FlyEngine
 {
-    private Weight weightsTable;
-    //private FSM fsm;
-    public Agent(Weight weights) 
-    { 
-        weightsTable = weights;
+    public abstract class Agent
+    {
+        private Weight weightsTable;
+        //private FSM fsm;
+        public Agent(Weight weights)
+        {
+            weightsTable = weights;
+        }
     }
 }

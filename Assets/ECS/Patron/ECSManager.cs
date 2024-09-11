@@ -50,16 +50,16 @@ public static class ECSManager
     public static uint CreateEntity()
     {
         ECSEntity ecsEntity;
-            ecsEntity = new ECSEntity();
-            entities.TryAdd(ecsEntity.GetID(), ecsEntity);
+        ecsEntity = new ECSEntity();
+        entities.TryAdd(ecsEntity.GetID(), ecsEntity);
         return ecsEntity.GetID();
     }
 
     public static void AddComponent<ComponentType>(uint entityID, ComponentType component) where ComponentType : ECSComponent
     {
-            component.EntityOwnerID = entityID;
-            entities[entityID].AddComponentType(typeof(ComponentType));
-            components[typeof(ComponentType)].TryAdd(entityID, component);
+        component.EntityOwnerID = entityID;
+        entities[entityID].AddComponentType(typeof(ComponentType));
+        components[typeof(ComponentType)].TryAdd(entityID, component);
     }
 
     public static bool ContainsComponent<ComponentType>(uint entityID) where ComponentType : ECSComponent
@@ -88,8 +88,8 @@ public static class ECSManager
         {
             ConcurrentDictionary<uint, ComponentType> comps = new ConcurrentDictionary<uint, ComponentType>();
 
-            Parallel.ForEach(components[typeof(ComponentType)], parallelOptions, component => 
-            { 
+            Parallel.ForEach(components[typeof(ComponentType)], parallelOptions, component =>
+            {
                 comps.TryAdd(component.Key, component.Value as ComponentType);
             });
 
@@ -99,7 +99,7 @@ public static class ECSManager
         return null;
     }
 
-    public static ComponentType GetComponent<ComponentType>(uint entityID) where ComponentType : ECSComponent 
+    public static ComponentType GetComponent<ComponentType>(uint entityID) where ComponentType : ECSComponent
     {
         return components[typeof(ComponentType)][entityID] as ComponentType;
     }
