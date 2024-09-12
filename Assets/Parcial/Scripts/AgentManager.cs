@@ -59,34 +59,33 @@ public class AgentManager : MonoBehaviour
 
     void LateUpdate()
     {
-        /*
-        foreach (KeyValuePair<uint, GameObject> entity in entities)
-        {
-            PositionComponent position = ECSManager.GetComponent<PositionComponent>(entity.Key);
-            entity.Value.transform.SetPositionAndRotation(new Vector3(position.X, position.Y, position.Z), Quaternion.identity);
-        }
-        */
 
-        List<Matrix4x4[]> drawMatrix = new List<Matrix4x4[]>();
-        int meshes = entities.Count;
-        for (int i = 0; i < entities.Count; i += MAX_OBJS_PER_DRAWCALL)
+        foreach (uint entity in entities)
         {
-            drawMatrix.Add(new Matrix4x4[meshes > MAX_OBJS_PER_DRAWCALL ? MAX_OBJS_PER_DRAWCALL : meshes]);
-            meshes -= MAX_OBJS_PER_DRAWCALL;
+            PositionComponent position = ECSManager.GetComponent<PositionComponent>(entity);
+            position.X += 1 * Time.deltaTime * Random.Range(0.1f, 2.0f);
         }
 
-        SetTRS(drawMatrix, caravanScale);
-        SetTRS(drawMatrix, villagerScale);
+        List<Matrix4x4[]> caravanDrawMatrix = new List<Matrix4x4[]>();
+        List<Matrix4x4[]> villagerDrawMatrix = new List<Matrix4x4[]>();
 
-        DrawMeshes(caravanCount, caravanMesh, caravanMaterial, drawMatrix);
-        DrawMeshes(villagerCount, villagerMesh, villagerMaterial, drawMatrix, caravanCount);
+        FillDrawMatrix(caravanDrawMatrix, caravanCount);
+        FillDrawMatrix(villagerDrawMatrix, villagerCount);
+
+        SetTRS(caravanDrawMatrix, caravanScale, 0, caravanCount);
+        SetTRS(villagerDrawMatrix, villagerScale, caravanCount, villagerCount);
+
+        DrawMeshes(caravanCount, caravanMesh, caravanMaterial, caravanDrawMatrix);
+        DrawMeshes(villagerCount, villagerMesh, villagerMaterial, villagerDrawMatrix);
 
     }
 
     private void CreateAgent()
     {
         uint entityID = ECSManager.CreateEntity();
-        ECSManager.AddComponent<PositionComponent>(entityID, new PositionComponent(0, 0, 0));
+        Vector2 newPos = Random.insideUnitCircle;
+
+        ECSManager.AddComponent<PositionComponent>(entityID, new PositionComponent(newPos.x, newPos.y, 0));
         ECSManager.AddComponent<VelocityComponent>(entityID, new VelocityComponent(velocity, Vector3.right.x, Vector3.right.y, Vector3.right.z));
         entities.Add(entityID);
     }
@@ -103,21 +102,37 @@ public class AgentManager : MonoBehaviour
         villagerCount++;
     }
 
-    private void SetTRS(List<Matrix4x4[]> drawMatrix, Vector3 scale)
+    private void FillDrawMatrix(List<Matrix4x4[]> drawMatrix, int entityCount)
     {
-        Parallel.For(0, entities.Count, i =>
+        for (int i = 0; i < entityCount; i += MAX_OBJS_PER_DRAWCALL)
+        {
+            drawMatrix.Add(new Matrix4x4[entityCount > MAX_OBJS_PER_DRAWCALL ? MAX_OBJS_PER_DRAWCALL : entityCount]);
+            entityCount -= MAX_OBJS_PER_DRAWCALL;
+        }
+    }
+
+    private void SetTRS(List<Matrix4x4[]> drawMatrix, Vector3 scale, int entityStartIndex, int entityCount)
+    {
+        Parallel.For(entityStartIndex, entityStartIndex + entityCount, i =>
         {
             PositionComponent position = ECSManager.GetComponent<PositionComponent>(entities[i]);
-            drawMatrix[(i / MAX_OBJS_PER_DRAWCALL)][(i % MAX_OBJS_PER_DRAWCALL)]
-            .SetTRS(new Vector3(position.X, position.Y, position.Z), Quaternion.identity, scale);
+
+            int matrixIndex = (i - entityStartIndex) / MAX_OBJS_PER_DRAWCALL;
+            int elementIndex = (i - entityStartIndex) % MAX_OBJS_PER_DRAWCALL;
+
+            if (matrixIndex < drawMatrix.Count && elementIndex < drawMatrix[matrixIndex].Length)
+            {
+                drawMatrix[matrixIndex][elementIndex].SetTRS(new Vector3(position.X, position.Y, position.Z), Quaternion.identity, scale);
+            }
         });
     }
 
-    private void DrawMeshes(int meshCount, Mesh mesh, Material material, List<Matrix4x4[]> drawMatrix, int threshold = 0)
+    private void DrawMeshes(int meshCount, Mesh mesh, Material material, List<Matrix4x4[]> drawMatrix, int exclusiveThreshold = 0)
     {
-        for (int i = 0; i < meshCount; i++)
-        {
-            Graphics.DrawMeshInstanced(mesh, 0, material, drawMatrix[i+threshold]);
+        for (int i = 0; i < meshCount && i + exclusiveThreshold < drawMatrix.Count; i++)
+        {   //Con esa condición me aseguro de no pasarme de lo que tiene drawMatrix adentro
+
+            Graphics.DrawMeshInstanced(mesh, 0, material, drawMatrix[i + exclusiveThreshold]);
         }
     }
 }
